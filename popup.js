@@ -25,6 +25,7 @@ function saveData() {
   const blockKeywords = document.getElementById("blockKeywords").checked;
   const blockSubreddits = document.getElementById("blockSubreddits").checked;
   const blockDomains = document.getElementById("blockDomains").checked;
+  const nukeConfirm = document.getElementById("nukeConfirm").checked;
 
   // Save the data using the Chrome storage API
   chrome.storage.local.set({
@@ -38,6 +39,7 @@ function saveData() {
     blockKeywords: blockKeywords,
     blockSubreddits: blockSubreddits,
     blockDomains: blockDomains,
+    nukeConfirm: nukeConfirm,
   });
 }
 
@@ -55,6 +57,7 @@ function loadData() {
       "blockKeywords",
       "blockSubreddits",
       "blockDomains",
+      "nukeConfirm",
     ],
     function (result) {
       if (result.hiddenUsers) {
@@ -97,6 +100,9 @@ function loadData() {
       }
       if (result.blockDomains !== undefined) {
         document.getElementById("blockDomains").checked = result.blockDomains;
+      }
+      if (result.nukeConfirm !== undefined) {
+        document.getElementById("nukeConfirm").checked = result.nukeConfirm;
       }
 
       // Load saved section order
@@ -266,6 +272,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (button) {
     button.addEventListener("click", function () {
+      const requireConfirm = document.getElementById("nukeConfirm").checked;
+      if (requireConfirm && !confirm("Are you sure? This will add the author and commentors to your block list.")) {
+        return;
+      }
       nuke();
     });
   }
@@ -318,6 +328,7 @@ function exportData() {
       blockKeywords: document.getElementById("blockKeywords").checked,
       blockSubreddits: document.getElementById("blockSubreddits").checked,
       blockDomains: document.getElementById("blockDomains").checked,
+      nukeConfirm: document.getElementById("nukeConfirm").checked,
     })
   );
 
@@ -354,6 +365,7 @@ function importData(file) {
         blockKeywords: null,
         blockSubreddits: null,
         blockDomains: null,
+        nukeConfirm: null,
       };
 
       const validCategories = new Set([
@@ -396,6 +408,7 @@ function importData(file) {
             if (parsed.blockKeywords !== undefined) data.blockKeywords = parsed.blockKeywords;
             if (parsed.blockSubreddits !== undefined) data.blockSubreddits = parsed.blockSubreddits;
             if (parsed.blockDomains !== undefined) data.blockDomains = parsed.blockDomains;
+            if (parsed.nukeConfirm !== undefined) data.nukeConfirm = parsed.nukeConfirm;
           } else if (parsed.items && Array.isArray(parsed.items)) {
             const mapped = keyMap[parsed.category];
             if (mapped && parsed.items.every((item) => typeof item === "string")) {
@@ -431,12 +444,12 @@ function importData(file) {
       if (data.blockSubreddits !== null) {
         document.getElementById("blockSubreddits").checked = data.blockSubreddits;
       }
-      if (data.blockDomains !== null) {
+    if (data.blockDomains !== null) {
         document.getElementById("blockDomains").checked = data.blockDomains;
       }
-
-      // Save to storage
-      saveData();
+      if (data.nukeConfirm !== null) {
+        document.getElementById("nukeConfirm").checked = data.nukeConfirm;
+      }
 
       // Show success message
       const successEl = document.getElementById("importSuccess");

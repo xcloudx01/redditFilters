@@ -95,6 +95,51 @@ body:has(.draggableSection.dragging) {
 
 .nukeHeader {
   border-radius: 3px;
+  min-height: 34px;
+}
+
+.nukeConfirmLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(0,0,0,0.7);
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.nukeConfirmLabel .switch {
+  width: 36px;
+  height: 18px;
+}
+
+.nukeConfirmLabel .slider {
+  width: 36px;
+  height: 18px;
+}
+
+.nukeConfirmLabel .slider:before {
+  height: 12px;
+  width: 12px;
+  left: 3px;
+  bottom: 3px;
+}
+
+.nukeConfirmLabel input:checked + .slider:before {
+  -webkit-transform: translateX(18px);
+  -ms-transform: translateX(18px);
+  transform: translateX(18px);
+}
+
+.nukeHeader .switch {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.nukeTitle {
+  margin: 0;
+  flex-shrink: 1;
 }
 
 /* Drop zone indicator at the bottom - shows when dragging */
@@ -183,6 +228,10 @@ body:has(.draggableSection.dragging) .drop-zone {
   height: 22px;
   margin-left: auto;
   flex-shrink: 0;
+}
+
+.nukeHeader .switch {
+  min-width: 50px;
 }
 
 /* Hide default HTML checkbox */
