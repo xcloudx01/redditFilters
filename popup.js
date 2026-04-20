@@ -14,7 +14,7 @@ function saveData() {
     .split("\n")
     .map((item) => item.trim());
 
-  // Fetch subreddits from input
+  // Fetch domains from input
   const domainsString = document.getElementById("domainList").value;
   const domainsArray = domainsString.split("\n").map((item) => item.trim());
 
@@ -98,8 +98,39 @@ function loadData() {
       if (result.blockDomains !== undefined) {
         document.getElementById("blockDomains").checked = result.blockDomains;
       }
+
+      // Load saved section order
+      loadSectionOrder();
     }
   );
+}
+
+function saveSectionOrder() {
+  const sections = document.querySelectorAll(".draggableSection");
+  const order = Array.from(sections).map((s) => s.dataset.section);
+  chrome.storage.local.set({ sectionOrder: order });
+}
+
+function loadSectionOrder() {
+  chrome.storage.local.get(["sectionOrder"], function (result) {
+    if (!result.sectionOrder || result.sectionOrder.length === 0) return;
+
+    const sections = document.querySelectorAll(".draggableSection");
+    const sectionMap = {};
+    sections.forEach((s) => {
+      sectionMap[s.dataset.section] = s;
+    });
+
+    const body = document.body;
+    const dropZone = document.querySelector(".drop-zone");
+    const endDiv = document.querySelector(".end");
+
+    result.sectionOrder.forEach((key) => {
+      if (sectionMap[key]) {
+        body.insertBefore(sectionMap[key], dropZone);
+      }
+    });
+  });
 }
 
 function nuke() {
@@ -141,14 +172,95 @@ document.getElementById("userList").addEventListener("input", saveData);
 document.getElementById("keywordList").addEventListener("input", saveData);
 document.getElementById("subredditList").addEventListener("input", saveData);
 document.getElementById("domainList").addEventListener("input", saveData);
-document.getElementById("loggingEnabled").addEventListener("change", saveData);
-document.getElementById("expandImages").addEventListener("change", saveData);
-document.getElementById("blockUsers").addEventListener("change", saveData);
-document.getElementById("blockKeywords").addEventListener("change", saveData);
-document.getElementById("blockSubreddits").addEventListener("change", saveData);
-document.getElementById("blockDomains").addEventListener("change", saveData);
 
-// Loads nuke button listener
+// Drag and drop logic
+let draggedSection = null;
+const dropZone = document.querySelector(".drop-zone");
+let lastReorderKey = ""; // Guard against unnecessary DOM mutations
+
+function onDragStart(e) {
+  draggedSection = this.closest(".draggableSection");
+  draggedSection.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+}
+
+function onDragEnd() {
+  if (draggedSection) {
+    draggedSection.classList.remove("dragging");
+  }
+  draggedSection = null;
+  lastReorderKey = "";
+}
+
+// Set up drag and drop on section headers
+function setupDragDrop() {
+  const headers = document.querySelectorAll(".sectionHeader");
+  headers.forEach((header) => {
+    header.setAttribute("draggable", "true");
+    header.addEventListener("dragstart", onDragStart);
+    header.addEventListener("dragend", onDragEnd);
+  });
+
+  // Per-section dragover — triggers reorder when cursor enters each section's area during drag
+  const allSections = document.querySelectorAll(".draggableSection");
+  allSections.forEach((section) => {
+    section.addEventListener("dragover", function (e) {
+      e.preventDefault();
+      if (!draggedSection || draggedSection === this) return;
+
+      // Find first non-dragged section whose midpoint cursor is above
+      const otherSections = Array.from(document.querySelectorAll(".draggableSection"))
+        .filter((s) => s !== draggedSection);
+
+      let insertBeforeIdx = -1;
+      for (let i = 0; i < otherSections.length; i++) {
+        const rect = otherSections[i].getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        if (e.clientY <= midY) {
+          insertBeforeIdx = i;
+          break;
+        }
+      }
+
+      let targetNode;
+      if (insertBeforeIdx === -1) {
+        const endDiv = document.querySelector(".end");
+        if (endDiv && draggedSection.nextElementSibling !== endDiv) {
+          draggedSection.parentNode.insertBefore(draggedSection, endDiv);
+        }
+      } else {
+        targetNode = otherSections[insertBeforeIdx];
+        if (draggedSection.nextElementSibling !== targetNode) {
+          draggedSection.parentNode.insertBefore(draggedSection, targetNode);
+        }
+      }
+    });
+
+    section.addEventListener("drop", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      saveSectionOrder();
+    });
+  });
+  if (dropZone) {
+    dropZone.addEventListener("dragover", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    dropZone.addEventListener("drop", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const endDiv = document.querySelector(".end");
+      if (endDiv && draggedSection !== endDiv.previousSibling) {
+        document.body.insertBefore(draggedSection, endDiv);
+      }
+      saveSectionOrder();
+    });
+  }
+}
+
+// Set up nuke button listener
 document.addEventListener("DOMContentLoaded", function () {
   var button = document.querySelector(".nukeButton");
 
@@ -157,6 +269,8 @@ document.addEventListener("DOMContentLoaded", function () {
       nuke();
     });
   }
+
+  setupDragDrop();
 });
 
 // Loads saved data back into input

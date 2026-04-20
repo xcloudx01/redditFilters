@@ -3,10 +3,26 @@ body {
   width: 310px;
   height: 600px;
   background-color: yellow;
+  overflow-y: auto;
 }
 
 html::-webkit-scrollbar {
-  display: none;
+  display: block;
+  width: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.3);
+  border-radius: 4px;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.3);
+  border-radius: 4px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.5);
 }
 
 h1 {
@@ -22,11 +38,77 @@ h3 {
   margin-top: 0rem;
   margin-bottom: 0rem;
 }
+
 .inputList {
   width: 300px;
-  height: 300px;
+  height: 150px;
   white-space: pre-wrap;
   font-family: monospace;
+}
+
+/* Draggable section styles */
+.draggableSection {
+  margin-bottom: 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.3);
+  transition: opacity 0.15s;
+}
+
+.draggableSection.dragging {
+  opacity: 0.4;
+}
+
+body:has(.draggableSection.dragging) {
+  cursor: grabbing !important;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  cursor: grab;
+  user-select: none;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px 4px 0 0;
+}
+
+.sectionHeader:hover {
+  cursor: grabbing;
+}
+
+.dragHandle {
+  font-size: 16px;
+  color: rgba(0,0,0,0.4);
+  margin-right: 8px;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.sectionHeader:hover .dragHandle {
+  color: #ff0066;
+}
+
+.sectionContent {
+  padding: 4px 8px 8px 8px;
+}
+
+.nukeHeader {
+  border-radius: 3px;
+}
+
+/* Drop zone indicator at the bottom - shows when dragging */
+.drop-zone {
+  height: 4px;
+  margin: -2px 0 6px 0;
+  background: #ff0066;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: auto;
+}
+
+body:has(.draggableSection.dragging) .drop-zone {
+  opacity: 1;
 }
 
 .nukeSection {
@@ -99,7 +181,8 @@ h3 {
   display: inline-block;
   width: 50px;
   height: 22px;
-  margin-left: 1rem;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 /* Hide default HTML checkbox */
