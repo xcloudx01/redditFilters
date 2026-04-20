@@ -169,7 +169,9 @@ function nuke() {
             combinedUsersArray.join("\n");
         }
       );
-    } catch (err) {}
+    } catch (err) {
+      console.error("Nuke failed:", err);
+    }
   });
 }
 
@@ -444,7 +446,7 @@ function importData(file) {
       if (data.blockSubreddits !== null) {
         document.getElementById("blockSubreddits").checked = data.blockSubreddits;
       }
-    if (data.blockDomains !== null) {
+      if (data.blockDomains !== null) {
         document.getElementById("blockDomains").checked = data.blockDomains;
       }
       if (data.nukeConfirm !== null) {
