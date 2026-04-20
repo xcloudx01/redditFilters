@@ -124,6 +124,15 @@
         </label>
       </div>
     </div>
+
+     <!-- Import/Export -->
+    <div class="importExportSection">
+      <button id="exportBtn" class="actionButton exportBtn">Export</button>
+      <button id="importBtn" class="actionButton importBtn">Import</button>
+      <input type="file" id="importFileInput" accept=".jsonl,.txt" style="display:none" />
+      <div id="importSuccess" class="importSuccess" style="display:none">Successfully imported!</div>
+    </div>
+
     <script src="popup.js"></script>
   </body>
 </html>

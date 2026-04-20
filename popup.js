@@ -275,3 +275,208 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Loads saved data back into input
 document.addEventListener("DOMContentLoaded", loadData);
+
+// Export all blocks as JSONL
+function exportData() {
+  const users = document.getElementById("userList").value
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const keywords = document.getElementById("keywordList").value
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const subreddits = document.getElementById("subredditList").value
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const domains = document.getElementById("domainList").value
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  // Sort by category alphabetically (blockedDomains, blockedKeywords, blockedSubreddits, blockedUsers)
+  const categories = [
+    { key: "blockedDomains", label: "Blocked Domains", items: domains },
+    { key: "blockedKeywords", label: "Blocked Keywords", items: keywords },
+    { key: "blockedSubreddits", label: "Blocked Subreddits", items: subreddits },
+    { key: "blockedUsers", label: "Blocked Users", items: users },
+  ];
+
+  const lines = [];
+  categories.forEach(({ key, label, items }) => {
+    if (items.length > 0) {
+      lines.push(JSON.stringify({ category: key, label: label, items: items }));
+    }
+  });
+
+  // Also export preferences (block toggles only)
+  lines.unshift(
+    JSON.stringify({
+      category: "preferences",
+      blockUsers: document.getElementById("blockUsers").checked,
+      blockKeywords: document.getElementById("blockKeywords").checked,
+      blockSubreddits: document.getElementById("blockSubreddits").checked,
+      blockDomains: document.getElementById("blockDomains").checked,
+    })
+  );
+
+  const content = lines.join("\n") + "\n";
+  const blob = new Blob([content], { type: "application/jsonl" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `reddit-filters-export-${new Date().toISOString().slice(0,10)}.jsonl`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Import from JSONL file with confirmation and sanity checks
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const text = e.target.result;
+      const lines = text.split("\n").filter((l) => l.trim());
+
+      if (lines.length === 0) {
+        alert("Import failed: file is empty or corrupted");
+        return;
+      }
+
+      // Validate each line is valid JSON and belongs to this extension
+      const data = {
+        hiddenUsers: [],
+        hiddenKeywords: [],
+        hiddenSubreddits: [],
+        hiddenDomains: [],
+        blockUsers: null,
+        blockKeywords: null,
+        blockSubreddits: null,
+        blockDomains: null,
+      };
+
+      const validCategories = new Set([
+        "blockedUsers",
+        "blockedKeywords",
+        "blockedSubreddits",
+        "blockedDomains",
+        "preferences",
+      ]);
+
+      const keyMap = {
+        blockedUsers: "hiddenUsers",
+        blockedKeywords: "hiddenKeywords",
+        blockedSubreddits: "hiddenSubreddits",
+        blockedDomains: "hiddenDomains",
+      };
+
+      let parsedCount = 0;
+      let failed = false;
+      lines.forEach((line) => {
+        if (failed) return;
+        try {
+          const parsed = JSON.parse(line);
+          if (!parsed || typeof parsed.category !== "string") return;
+
+          if (!validCategories.has(parsed.category)) {
+            alert(
+              "Import failed: unrecognized category '" +
+                parsed.category +
+                "' — file may not be from this extension"
+            );
+            failed = true;
+            return;
+          }
+
+          parsedCount++;
+
+          if (parsed.category === "preferences") {
+            if (parsed.blockUsers !== undefined) data.blockUsers = parsed.blockUsers;
+            if (parsed.blockKeywords !== undefined) data.blockKeywords = parsed.blockKeywords;
+            if (parsed.blockSubreddits !== undefined) data.blockSubreddits = parsed.blockSubreddits;
+            if (parsed.blockDomains !== undefined) data.blockDomains = parsed.blockDomains;
+          } else if (parsed.items && Array.isArray(parsed.items)) {
+            const mapped = keyMap[parsed.category];
+            if (mapped && parsed.items.every((item) => typeof item === "string")) {
+              data[mapped] = parsed.items;
+            }
+          }
+        } catch {
+          alert("Import failed: line contains invalid JSON — file may be corrupted");
+          failed = true;
+          return;
+        }
+      });
+
+      if (failed) return;
+
+      if (parsedCount === 0) {
+        alert("Import failed: no valid data found in file");
+        return;
+      }
+
+      // Overwrite current settings
+      document.getElementById("userList").value = data.hiddenUsers.join("\n");
+      document.getElementById("keywordList").value = data.hiddenKeywords.join("\n");
+      document.getElementById("subredditList").value = data.hiddenSubreddits.join("\n");
+      document.getElementById("domainList").value = data.hiddenDomains.join("\n");
+
+      if (data.blockUsers !== null) {
+        document.getElementById("blockUsers").checked = data.blockUsers;
+      }
+      if (data.blockKeywords !== null) {
+        document.getElementById("blockKeywords").checked = data.blockKeywords;
+      }
+      if (data.blockSubreddits !== null) {
+        document.getElementById("blockSubreddits").checked = data.blockSubreddits;
+      }
+      if (data.blockDomains !== null) {
+        document.getElementById("blockDomains").checked = data.blockDomains;
+      }
+
+      // Save to storage
+      saveData();
+
+      // Show success message
+      const successEl = document.getElementById("importSuccess");
+      if (successEl) {
+        successEl.classList.remove("visible");
+        void successEl.getBoundingClientRect();
+        successEl.style.display = "block";
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            successEl.classList.add("visible");
+          });
+        });
+        setTimeout(() => {
+          successEl.classList.remove("visible");
+          setTimeout(() => {
+            successEl.style.display = "none";
+          }, 300);
+        }, 30000);
+      }
+    } catch (err) {
+      alert("Failed to parse JSONL file: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Warn before opening file picker
+function triggerImport() {
+  if (!confirm("Importing will replace your current block lists. Do you wish to continue?")) {
+    return;
+  }
+  document.getElementById("importFileInput").click();
+}
+
+// Set up import/export button listeners
+document.getElementById("exportBtn").addEventListener("click", exportData);
+document.getElementById("importBtn").addEventListener("click", triggerImport);
+document.getElementById("importFileInput").addEventListener("change", function (e) {
+  if (e.target.files.length > 0) {
+    importData(e.target.files[0]);
+    e.target.value = ""; // Reset so same file can be re-imported
+  }
+});

@@ -273,3 +273,91 @@ input:checked + .slider.small:before {
   display: flex;
   align-items: center;
 }
+
+.importExportSection {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 0.5rem 0 0.5rem 0;
+}
+
+.actionButton {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.exportBtn:hover {
+  background-color: #cc0052;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(255, 0, 102, 0.3);
+}
+
+.importBtn:hover {
+  background-color: #555;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.exportBtn {
+  background-color: #ff0066;
+  color: white;
+}
+
+.importBtn {
+  background-color: #333;
+  color: white;
+}
+
+.importExportSection {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 0.5rem 0 0.5rem 0;
+  position: relative;
+}
+
+.importSuccess {
+  color: #006600;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.importSuccess.visible {
+  animation: successFlash 1.8s ease forwards;
+}
+
+@keyframes successFlash {
+  0% { opacity: 0; }
+  10% { opacity: 1; transform: translateX(-50%) scale(1); }
+  15% { transform: translateX(-50%) scale(1.08); }
+  25% { transform: translateX(-50%) scale(1); }
+  100% { opacity: 1; }
+}
+
+.importSuccess {
+  color: #006600;
+  font-size: 12px;
+  font-weight: bold !important;
+  text-align: center;
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.importSuccess.visible {
+  animation: successFlash 1.8s ease forwards;
+}
